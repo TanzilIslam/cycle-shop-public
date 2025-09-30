@@ -325,10 +325,10 @@ const selectedTab = ref("image");
 const currentViews = ref(cycle.views);
 
 const enquiryForm = reactive({
-  name: "3434",
-  email: "334@gmail.com",
-  phone: "343",
-  message: "34343",
+  name: "",
+  email: "",
+  phone: "",
+  message: "",
 });
 
 const filteredSpecKeys = computed(() => (sectionId) => {
