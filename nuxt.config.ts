@@ -6,6 +6,12 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ["~/assets/css/main.css"],
 
+  runtimeConfig: {
+    public: {
+      shopId: process.env.SHOP_ID || "",
+    },
+  },
+
   vite: {
     plugins: [tailwindcss()],
   },
