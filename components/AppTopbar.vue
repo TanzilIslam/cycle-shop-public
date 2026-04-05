@@ -1,6 +1,7 @@
 <script setup>
 import Button from "@/volt/Button.vue";
 const { isDarkMode, toggleDarkMode } = useLayout();
+const { data: shop } = await useShopInfo();
 </script>
 
 <template>
@@ -9,7 +10,15 @@ const { isDarkMode, toggleDarkMode } = useLayout();
   >
     <div class="flex justify-between items-center">
       <div class="flex gap-3 items-center">
+        <!-- Shop logo or PrimeVue fallback -->
+        <img
+          v-if="shop?.logo_url"
+          :src="shop.logo_url"
+          :alt="shop.name"
+          class="w-8 h-10 object-contain"
+        />
         <svg
+          v-else
           width="35"
           height="40"
           viewBox="0 0 35 40"
@@ -26,16 +35,17 @@ const { isDarkMode, toggleDarkMode } = useLayout();
             class="fill-surface-900 dark:fill-surface-0"
           />
         </svg>
-        <span class="hidden sm:flex flex-col"
-          ><span
-            class="text-xl font-light text-surface-700 dark:text-surface-100 leading-none"
-            >My Cycle Shop</span
-          >
-          <span class="text-sm font-medium text-primary leading-tight"
-            >Browse and buy cycles</span
-          ></span
-        >
+
+        <span class="hidden sm:flex flex-col">
+          <span class="text-xl font-light text-surface-700 dark:text-surface-100 leading-none">
+            {{ shop?.name || 'Store' }}
+          </span>
+          <span class="text-sm font-medium text-primary leading-tight">
+            {{ shop?.description || 'Browse and shop' }}
+          </span>
+        </span>
       </div>
+
       <div class="flex items-center gap-2">
         <button
           type="button"

@@ -6,12 +6,10 @@
     <div class="flex flex-col w-full max-w-7xl mx-auto gap-6 flex-1">
       <slot />
     </div>
-    <AppFooter />
     <Toast />
   </div>
 </template>
 <script setup>
 import Toast from "@/volt/Toast.vue";
 import AppTopbar from "../components/AppTopbar.vue";
-import AppFooter from "../components/AppFooter.vue";
 </script>
