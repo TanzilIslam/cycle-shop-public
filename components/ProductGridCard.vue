@@ -19,6 +19,9 @@
             @click="$router.push(`/product/${props.product?.slug}`)"
           />
         </div>
+        <p class="text-xs text-surface-400 mt-2">
+          <i class="pi pi-eye mr-1"></i>{{ props.product?.view_count ?? 0 }} views
+        </p>
       </div>
     </div>
   </div>

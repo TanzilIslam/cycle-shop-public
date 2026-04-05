@@ -69,8 +69,11 @@
           </p>
         </div>
         <h1 class="text-2xl font-bold mb-2">{{ product.name }}</h1>
-        <div class="flex items-center mb-4">
+        <div class="flex items-center justify-between mb-4">
           <span class="text-xl font-semibold">{{ product.price }} /- BDT</span>
+          <span class="text-sm text-surface-400">
+            <i class="pi pi-eye mr-1"></i>{{ product.view_count ?? 0 }} views
+          </span>
         </div>
         <p class="text-surface-600 dark:text-surface-300 mb-6">
           {{ product.description }}
@@ -189,7 +192,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import Accordion from "@/volt/Accordion.vue";
 import AccordionPanel from "@/volt/AccordionPanel.vue";
 import AccordionHeader from "@/volt/AccordionHeader.vue";
@@ -275,6 +278,10 @@ const enquiryForm = reactive({
   email: "",
   phone: "",
   message: "",
+});
+
+onMounted(() => {
+  supabase.rpc('increment_product_view', { product_id: product.id });
 });
 
 const breadcrumbItems = computed(() => [
