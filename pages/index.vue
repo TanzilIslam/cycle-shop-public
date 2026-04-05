@@ -64,7 +64,7 @@ import InputText from "@/volt/InputText.vue";
 import SelectButton from "@/volt/SelectButton.vue";
 import ProductGridCard from "@/components/ProductGridCard.vue";
 import ProductListCard from "@/components/ProductListCard.vue";
-import { CATEGORY_TABLE, PRODUCT_TABLE, SHOP_TABLE } from "@/utils/db";
+import { CATEGORY_TABLE, PRODUCT_TABLE, USER_TABLE } from "@/utils/db";
 import { useShopId } from "@/utils/shopId";
 
 const supabase = useSupabaseClient();
@@ -78,7 +78,7 @@ const [
 ] = await Promise.all([
   supabase.from(CATEGORY_TABLE).select("*").eq("shop_id", shopId),
   supabase.from(PRODUCT_TABLE).select(`*, ${CATEGORY_TABLE}(*)`).eq("shop_id", shopId).eq("is_active", true),
-  supabase.from(SHOP_TABLE).select("name, description, logo_url, website, phone, email, address, facebook, instagram, youtube").eq("id", shopId).single(),
+  supabase.from(USER_TABLE).select("name, description, logo_url, website, phone, email, address, facebook, instagram, youtube").eq("id", shopId).single(),
 ]);
 
 if (productError) console.error("Error fetching products:", productError.message);

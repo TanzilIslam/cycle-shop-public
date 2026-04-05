@@ -1,6 +1,6 @@
 # Public Frontend — CLAUDE.md
 
-Nuxt 3 public-facing storefront for the cycle shop. Displays products, handles customer enquiries, and supports SEO. Part of the `store` app within the multi-app `cms` Supabase project.
+Nuxt 3 public-facing storefront for a generic multi-tenant product store. Displays products, handles customer enquiries, and supports SEO. Part of the `store` app within the multi-app `cms` Supabase project.
 
 ## Tech Stack
 
@@ -12,33 +12,31 @@ Nuxt 3 public-facing storefront for the cycle shop. Displays products, handles c
 | PrimeVue | 4.3.2 | Unstyled UI component library |
 | Tailwind CSS | 4.0.15 | Utility-first styling (via Vite plugin) |
 | tailwindcss-primeui | 0.6.1 | PrimeVue + Tailwind design tokens bridge |
-| Chart.js | 4.4.8 | Charts/analytics widgets |
 | npm | — | Package manager |
 
 ## Project Structure
 
 ```
 app.vue                    # Root — wraps all pages with <NuxtLayout><NuxtPage />
-nuxt.config.ts             # Nuxt config: modules, vite plugins, supabase options
+nuxt.config.ts             # Nuxt config: modules, runtimeConfig, supabase options
 assets/css/main.css        # Global CSS: Tailwind + PrimeUI imports + CSS variables
 plugins/primevue.js        # PrimeVue init (unstyled: true, ToastService, StyleClass)
 layouts/
   default.vue              # Shared layout: AppTopbar + slot + AppFooter + Toast
 pages/
-  index.vue                # Home: cycles listing with search/filter/sort
-  login.vue                # Login stub
-  cycle/[slug].vue         # Cycle detail: gallery, specs, enquiry form
+  index.vue                # Home: product listing with search/filter/sort + shop info
+  product/[slug].vue       # Product detail: gallery, specs, enquiry form + shop contact
 components/
   AppTopbar.vue            # Top nav: dark mode toggle, theme settings
   AppFooter.vue            # Footer with social links
   AppConfig.vue            # Theme/color picker panel
-  CycleGridCard.vue        # Product card (grid view)
-  CycleListCard.vue        # Product card (list view)
-  dashboard/               # Dashboard widgets (stats, activity, trends)
+  ProductGridCard.vue      # Product card (grid view)
+  ProductListCard.vue      # Product card (list view)
 composables/
   use-layout.ts            # Theme state: primary color, surface color, dark mode toggle
 utils/
-  db.ts                    # DB table name constants
+  db.ts                    # DB table name constants (all prefixed with store_)
+  shopId.ts                # useShopId() composable — reads SHOP_ID from runtimeConfig
 volt/                      # Custom component library — styled PrimeVue wrappers
 server/                    # Prepared for server routes (empty)
 ```
@@ -51,12 +49,13 @@ server/                    # Prepared for server routes (empty)
 
 ## Environment Variables
 
-Set via `@nuxtjs/supabase` module — required in `.env` (not committed):
+Required in `.env` (not committed):
 ```
 SUPABASE_URL=https://crqpqaxhdzvqnmzwbrkt.supabase.co
 SUPABASE_KEY=<anon key>
+SHOP_ID=<uuid from store_users>
 ```
-Note: unlike the admin app (Vite), the Nuxt module uses `SUPABASE_URL` / `SUPABASE_KEY` (no `VITE_` prefix).
+Note: unlike the admin app (Vite), the Nuxt module uses `SUPABASE_URL` / `SUPABASE_KEY` (no `VITE_` prefix). `SHOP_ID` is exposed via `runtimeConfig.public.shopId`.
 
 ## Database Tables
 
@@ -64,17 +63,22 @@ Constants in `utils/db.ts`. Same table names as the admin app:
 
 | Constant | Table Name |
 |---|---|
-| `CYCLE_TABLE` | `cycle_shop_cycles` |
-| `BRAND_TABLE` | `cycle_shop_brand` |
-| `CATEGORY_TABLE` | `cycle_shop_categories` |
-| `CYCLE_SPECIFICATION_TABLE` | `cycle_shop_cycle_specs` |
-| `SPECIFICATION_SECTION_TABLE` | `cycle_shop_spec_sections` |
-| `SPECIFICATION_KEY_TABLE` | `cycle_shop_specs_keys` |
-| `ENQUIRY_TABLE` | `cycle_shop_inquiries` |
-| `SHOP_TABLE` | `cycle_shop_shops` |
-| `PRODUCT_TABLE` | `cycle_shop_products` |
+| `USER_TABLE` | `store_users` |
+| `CATEGORY_TABLE` | `store_categories` |
+| `PRODUCT_TABLE` | `store_products` |
+| `PRODUCT_SPECIFICATION_TABLE` | `store_product_specs` |
+| `SPECIFICATION_SECTION_TABLE` | `store_spec_sections` |
+| `SPECIFICATION_KEY_TABLE` | `store_spec_keys` |
+| `ENQUIRY_TABLE` | `store_enquiries` |
 
 Always import from `utils/db.ts` — never hardcode table name strings.
+
+## Multi-Tenant Design
+
+- All queries are scoped by `SHOP_ID` env var (set per deployment)
+- `useShopId()` composable reads `runtimeConfig.public.shopId` (SSR-safe)
+- `store_users.id` is the tenant identifier; all tables filtered by `shop_id = SHOP_ID`
+- No auth in public app — anon Supabase client only; RLS allows public SELECT
 
 ## Supabase Usage
 
@@ -83,38 +87,42 @@ import { useSupabaseClient } from '#imports'
 const supabase = useSupabaseClient()
 ```
 
-- `@nuxtjs/supabase` auto-imports `useSupabaseClient`, `useSupabaseUser`, etc. via `#imports`
-- Auth redirects disabled (`supabase: { redirect: false }`) — handle redirects manually
-- No auth enforcement in current pages — login page is a stub
-- DB ops: SELECT (cycles, brands, categories, specs), INSERT (enquiries), UPDATE (view counts)
-- JOIN syntax: `supabase.from(CYCLE_TABLE).select('*, cycle_shop_brand(*), cycle_shop_categories(*)')`
+- `@nuxtjs/supabase` auto-imports `useSupabaseClient` etc. via `#imports`
+- Auth redirects disabled (`supabase: { redirect: false }`)
+- No login page — public storefront only
+- DB ops: SELECT (products, categories, specs, shop info), INSERT (enquiries)
 
 ## Routing (File-System Based)
 
 | File | Route | Notes |
 |---|---|---|
-| `pages/index.vue` | `/` | Cycles listing with filters |
-| `pages/login.vue` | `/login` | Auth stub |
-| `pages/cycle/[slug].vue` | `/cycle/:slug` | Product detail page |
+| `pages/index.vue` | `/` | Product listing with filters + shop info |
+| `pages/product/[slug].vue` | `/product/:slug` | Product detail + enquiry form |
 
 All pages use `layouts/default.vue` automatically via `app.vue`.
 
+## SEO
+
+Both pages implement full SEO via `useHead()`:
+- `<title>`, `<meta name="description">`, `<link rel="canonical">`
+- OpenGraph tags (`og:title`, `og:description`, `og:image`, `og:url`, `og:type`)
+- Twitter Card tags
+- JSON-LD structured data:
+  - Home: `Organization` + `WebSite` schemas
+  - Product detail: `Product` (with offers/availability/seller) + `BreadcrumbList` schemas
+- `useRequestURL()` used for dynamic canonical/og:url — SSR-safe, no hardcoded domains
+
 ## Component Library: `volt/`
 
-18 custom components that wrap PrimeVue in unstyled mode with Tailwind styling via PassThrough (PT):
-`Button`, `SecondaryButton`, `InputText`, `Textarea`, `Select`, `SelectButton`, `Tabs`, `Tab`, `TabList`, `TabPanels`, `TabPanel`, `Accordion`, `AccordionPanel`, `AccordionHeader`, `AccordionContent`, `Breadcrumb`, `DataTable`, `Tag`, `Toast`
-
-- Always prefer volt components over raw PrimeVue imports
-- Extend via PT props — do not modify volt source for one-off styling
-- `volt/utils.ts` exports `ptViewMerge` for merging PT class strings
+Custom components wrapping PrimeVue in unstyled mode with Tailwind styling via PassThrough (PT).
+Always prefer volt components over raw PrimeVue imports.
 
 ## Styling Conventions
 
 - **Tailwind 4** — no `tailwind.config.js`; configuration is CSS-first via `assets/css/main.css`
 - **Dark mode** — toggled by adding/removing `.p-dark` class on `<html>`; use `dark:` Tailwind variants
-- **CSS variables** — all theme colors (`--p-primary-*`, `--p-surface-*`) are defined in `main.css` `:root`
+- **CSS variables** — all theme colors (`--p-primary-*`, `--p-surface-*`) defined in `main.css` `:root`
 - **`.card` utility class** — defined in `main.css`; use for panel/card containers
-- Theme switching at runtime via `use-layout.ts` composable (18 primary + 8 surface palettes)
 
 ## Data Fetching Pattern
 
@@ -122,10 +130,9 @@ Pages use `<script setup>` with top-level `await` — Nuxt handles SSR automatic
 
 ```typescript
 const supabase = useSupabaseClient()
-const { data } = await supabase.from(CYCLE_TABLE).select('*')
+const shopId = useShopId()
+const { data } = await supabase.from(PRODUCT_TABLE).select('*').eq('shop_id', shopId)
 ```
-
-Current filtering (index page) is client-side — data fetched once, filtered reactively. For larger datasets, move filtering to server-side Supabase queries.
 
 ## Dev Commands
 
@@ -138,8 +145,8 @@ npm run preview     # preview production build
 
 ## Key Architectural Decisions
 
-- PrimeVue runs in `unstyled: true` mode — all styling owned by Tailwind via PT
 - No Pinia — theme state in composable, page state is local `ref`/`reactive`
 - Each page directly calls `useSupabaseClient()` — no centralized service/store layer
 - SSR-compatible by default (Nuxt 3); avoid `window`/`document` outside `onMounted`
-- `supabase: { redirect: false }` — auth flow is fully manual, no automatic redirects
+- PrimeVue runs in `unstyled: true` mode — all styling owned by Tailwind via PT
+- `supabase: { redirect: false }` — no automatic auth redirects

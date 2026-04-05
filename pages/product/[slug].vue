@@ -210,7 +210,7 @@ import {
   PRODUCT_SPECIFICATION_TABLE,
   PRODUCT_TABLE,
   CATEGORY_TABLE,
-  SHOP_TABLE,
+  USER_TABLE,
   ENQUIRY_TABLE,
 } from "@/utils/db";
 import { useShopId } from "@/utils/shopId";
@@ -246,7 +246,7 @@ const [
     .eq("shop_id", shopId)
     .order("display_order", { ascending: true }),
   supabase
-    .from(SHOP_TABLE)
+    .from(USER_TABLE)
     .select("name, description, logo_url, website, phone, whatsapp, email, address, map_link, facebook, instagram, youtube")
     .eq("id", shopId)
     .single(),
