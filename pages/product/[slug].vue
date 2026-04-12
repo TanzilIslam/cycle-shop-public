@@ -280,8 +280,8 @@ const enquiryForm = reactive({
   message: "",
 });
 
-onMounted(() => {
-  supabase.rpc('increment_product_view', { product_id: product.id });
+onMounted( async () => {
+  await supabase.rpc('increment_product_view', { product_id: product.id });
 });
 
 const breadcrumbItems = computed(() => [

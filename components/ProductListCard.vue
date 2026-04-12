@@ -1,5 +1,5 @@
 <template>
-  <div class="card !p-0 hover:translate-y-[-15px] transition-all cursor-pointer hover:shadow-lg duration-500 mb-10">
+  <NuxtLink :to="`/product/${props.product?.slug}`" class="card !p-0 hover:translate-y-[-15px] transition-all cursor-pointer hover:shadow-lg duration-500 mb-10 block">
     <div class="grid grid-cols-12 gap-4 h-full items-center">
       <img
         :src="props.product.images?.[0] || ''"
@@ -15,20 +15,12 @@
         <p class="text-xs text-surface-400 mt-1">
           <i class="pi pi-eye mr-1"></i>{{ props.product?.view_count ?? 0 }} views
         </p>
-        <div class="flex mt-4">
-          <Button
-            label="View Details"
-            variant="outlined"
-            @click="$router.push(`/product/${props.product?.slug}`)"
-          />
-        </div>
       </div>
     </div>
-  </div>
+  </NuxtLink>
 </template>
 
 <script setup>
-import Button from "@/volt/Button.vue";
 const props = defineProps({
   product: {
     type: Object,
