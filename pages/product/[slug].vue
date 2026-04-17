@@ -14,12 +14,21 @@
     <div class="grid grid-cols-12 gap-4 md:gap-10 mb-10">
       <!-- Gallery -->
       <div class="col-span-12 md:col-span-6">
-        <img
-          v-if="selectedTab === 'image'"
-          :src="selectedImage"
-          alt="product image"
-          class="w-full h-[300px] md:h-[400px] object-cover rounded-lg"
-        />
+        <template v-if="selectedTab === 'image'">
+          <img
+            v-if="selectedImage"
+            :src="selectedImage"
+            alt="product image"
+            class="w-full h-[300px] md:h-[400px] object-cover rounded-lg"
+          />
+          <div
+            v-else
+            class="w-full h-[300px] md:h-[400px] rounded-lg bg-surface-100 dark:bg-surface-800 flex flex-col items-center justify-center gap-2 text-surface-400"
+          >
+            <i class="pi pi-image text-5xl"></i>
+            <span class="text-sm">No Image Available</span>
+          </div>
+        </template>
         <video
           v-else-if="selectedTab === 'video'"
           :src="selectedVideo"
@@ -34,15 +43,24 @@
           <TabPanels>
             <TabPanel value="image">
               <div class="w-full flex gap-4 items-center whitespace-nowrap overflow-x-auto mt-2">
-                <img
-                  v-for="image in product.images"
-                  :key="image"
-                  :src="image"
-                  alt="product"
-                  class="!w-60 !h-48 object-cover rounded-lg card cursor-pointer"
-                  :class="{ '!border-1 !border-primary-500': selectedImage === image }"
-                  @click="selectedImage = image"
-                />
+                <template v-if="product.images?.length">
+                  <img
+                    v-for="image in product.images"
+                    :key="image"
+                    :src="image"
+                    alt="product"
+                    class="!w-60 !h-48 object-cover rounded-lg card cursor-pointer"
+                    :class="{ '!border-1 !border-primary-500': selectedImage === image }"
+                    @click="selectedImage = image"
+                  />
+                </template>
+                <div
+                  v-else
+                  class="!w-60 !h-48 rounded-lg bg-surface-100 dark:bg-surface-800 flex flex-col items-center justify-center gap-2 text-surface-400 shrink-0"
+                >
+                  <i class="pi pi-image text-4xl"></i>
+                  <span class="text-xs">No Images</span>
+                </div>
               </div>
             </TabPanel>
             <TabPanel value="video">
@@ -63,18 +81,40 @@
 
       <!-- Product Info -->
       <div class="col-span-12 md:col-span-6">
-        <div class="flex items-center gap-2 text-sm mb-4">
+        <div class="flex items-center gap-2 text-sm mb-4 flex-wrap">
           <p class="bg-surface-200 dark:bg-surface-800 px-4 py-2 rounded">
             {{ product.store_categories?.name }}
           </p>
+          <p v-if="product.series" class="bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 px-4 py-2 rounded">
+            {{ product.series }}
+          </p>
         </div>
-        <h1 class="text-2xl font-bold mb-2">{{ product.name }}</h1>
-        <div class="flex items-center justify-between mb-4">
+        <h1 class="text-2xl font-bold mb-1">{{ product.name }}</h1>
+        <p v-if="product.tagline" class="text-sm text-surface-500 dark:text-surface-400 italic mb-3">{{ product.tagline }}</p>
+        <div class="flex items-center justify-between mb-1">
           <span class="text-xl font-semibold">{{ product.price }} /- BDT</span>
           <span class="text-sm text-surface-400">
             <i class="pi pi-eye mr-1"></i>{{ product.view_count ?? 0 }} views
           </span>
         </div>
+        <p v-if="product.price_note" class="text-xs text-surface-400 mb-4">{{ product.price_note }}</p>
+        <div v-if="product.colors?.length" class="flex flex-wrap gap-2 mb-4">
+          <span
+            v-for="color in product.colors"
+            :key="color"
+            class="text-xs px-3 py-1 rounded-full border border-surface-300 dark:border-surface-600"
+          >{{ color }}</span>
+        </div>
+        <ul v-if="product.key_features?.length" class="mb-6 space-y-1">
+          <li
+            v-for="feature in product.key_features"
+            :key="feature"
+            class="flex items-center gap-2 text-sm"
+          >
+            <i class="pi pi-check-circle text-primary-500 text-xs"></i>
+            {{ feature }}
+          </li>
+        </ul>
         <p class="text-surface-600 dark:text-surface-300 mb-6">
           {{ product.description }}
         </p>
